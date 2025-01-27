@@ -1,0 +1,40 @@
+# コンパイル生成物
+*.fasl
+*.ufasl
+*.lib
+*.x86f
+*.sse2f
+
+# スワップファイルや一時ファイル
+*.swp
+*.bak
+*~
+
+# Quicklisp関連
+quicklisp/
+local-projects/
+
+# ASDFのキャッシュディレクトリ
+.cache/
+asdf-cache/
+
+# IDE/エディタの設定や一時ファイル
+.idea/
+*.iml
+*.elc
+
+# Emacsによるバックアップファイル
+*~
+.#*
+# Emacsのオートセーブファイル
+# (例: `.#ファイル名`)
+.\#*
+
+# Vimによるバックアップファイル
+*.swp
+*.swo
+*.swn
+
+# その他
+.DS_Store  # macOSのシステムファイル
+Thumbs.db  # Windowsのサムネイルキャッシュ
