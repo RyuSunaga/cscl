@@ -59,7 +59,6 @@
   "Assoc for getting target table."
   (assoc category (eval *target-table*)))
 
-
 ;; utility
 (defun mappend (fn the-list)
   "apply fn to each element of the list, and append the results."
