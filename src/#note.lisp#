@@ -1,0 +1,70 @@
+(defstruct name
+  first
+  (middle nil)
+  last)
+
+(setf b (make-name :first "ryu" :last "sunaga"))
+
+(defun check-x-type (x)
+  "Check type about x and return the type"
+  (typecase x
+    (list 'list)
+    (number 'number)
+    (function 'function)))
+
+((lambda (x) ((lambda (y) (+ x y)) (* x x))) 6)
+
+((lambda (x) (* x x)) 3)
+
+(defun length9 (list)
+  (if (null list)
+      0
+      (+ 1 (length9 (rest list)))))
+
+(defun length10 (list)
+  (length10-aux list 0))
+
+(defun length10-aux (sublist len-so-far)
+  (if (null sublist)
+      len-so-far
+      (length10-aux (rest sublist) (+ 1 len-so-far))))
+
+(defun length11 (list)
+  (labels
+      ((length11-aux (sublist len-so-far)
+	 (if (null sublist)
+	     len-so-far
+	     (length11-aux (rest sublist) (+ 1 len-so-far)))))
+    (lengthl11-aux list 0)))
+
+;; マクロが真に必要かどうかを判断する 
+;; マクロの構文を書く (while test body ...)
+;; マクロを何に展開するべきかを書く (
+;; マクロの構文と展開との対応を実装するためにdefmacroを書く
+
+(defmacro while (test &rest body)
+  "Repeat body while test is true."
+  (list* 'loop
+	 (list 'unless test '(return nil))
+	 body))
+(defmacro while (test &rest body)
+  "Repeat body while test is true."
+  `(loop (unless ,test (return nil))
+	 ,@body))
+
+;; '(1 2 3) -> (1 . 2 . 3)
+
+(defun dprint (x)
+  "Print x as dot expression.
+  E.g. '(1 2) -> (1 . 2)"
+  (cond
+    ((atom x) (princ x))
+    (t
+     (princ "( ")
+     (dprint  (first x))
+     (pr-rest (rest x))
+     (princ " )"))))
+
+(defun pr-rest (x)
+  (princ ".")
+  (dprint x))
