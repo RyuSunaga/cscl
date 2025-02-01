@@ -33,17 +33,17 @@
   ;; Check item-and-info-list from *items* and insert into *item-table*.
   (mapc (lambda (x) (insert-item-and-info-list (item-name x) (info-list x))) *items*))
 
-(defun insert-item-and-info-list (name info-list)
+(defun insert-item-and-info-list (item info-list)
   "Insert a new item and infomation to *item-table* ."
-  (set-item name)
-  (mapc (lambda (x) (set-item-info name (info-category x) (info-value x))) info-list))
+  (set-item item)
+  (mapc (lambda (x) (set-item-info item (info-category x) (info-value x))) info-list))
 
 ;; Helper for *item-table*
-(defun set-item (name)
-  (setf (gethash name *item-table*) (make-hash-table)))
+(defun set-item (item)
+  (setf (gethash item *item-table*) (make-hash-table)))
 
-(defun gethash-item-info (name)
-  (gethash name *item-table*))
+(defun gethash-item-info (item)
+  (gethash item *item-table*))
 
 (defun set-item-info (item-name key value)
   (setf (gethash key (gethash-item-info item-name)) value))
@@ -75,6 +75,16 @@
   "Return item infomation list"
   (rest item-and-info-list))
 
+(defun delete-item-info (item info-key)
+  "Delete key from item info."
+  (remhash info-key (gethash-item-info item)))
+
+(defun count-item-info (item)
+  (hash-table-count (gethash item *item-table*)))
+
+(defun answer-p (item)
+  "Check the item is answer or not."
+  (if (= (count-item-info item) 0) t nil))
 
 ;; 回答候補を絞っていく
 ;; 方針：*items*のitemに紐づくinfomationを一つずつ消していく。全て無くなればそれが回答と言える
@@ -87,29 +97,48 @@
   ;; itemの各要素を確認して要素数が0になっていれば全て一致するということなのでOK
   )
 
+;; helper for game.
+
+(defun read-line-as-symbol ()
+  (intern (string-upcase (read-line))))
+
+(defun true-answer-p (answer)
+  "Check the answer is correct or not."
+  (if (eq answer *answer*) t nil))
 
 (defun main ()
 
+  ;; init *answer*
+  (setf *answer* nil)
+  
   ;; Init *item-table* and set infomation from *items*.
   (init-item-table)
   (show-item-table)
 
   ;; Player decide answer
-  (format t "Hi! Please input the answer in this game. ~%>>")
-  (setf *answer* (read-line))
-  ;; TODO itemsにあるものしか入力できなくする
-  (format t "Answer is ~a in this game.~%" *answer*)
+  (loop
+    until *answer*
+    do
+       (format t "Hi! Please input the answer in this game. ~%>>")
+       (setf *answer* (read-line-as-symbol))
+       (if (gethash-item-info *answer*)
+	   (format t "Answer is ~a in this game.~%" *answer*)
+	   (setf *answer* nil)))
   
   ;; 20 questions
   (dotimes (i 20)
     ;; Programm ask question or answer.
 
     ;; Player answer for the question.
+
+    ;; TODO: questoinの回答で分岐
+    ;; 質問した属性がyesなら：全リストでその要素を持つものを削除する
+    ;; 質問した属性がnoなら：カテゴリーの情報を削除
+    ;; カテゴリーの情報が1つになってしまったら：全リストでその情報を持つものを削除する
     
     )
 
   ;; Show the answer. (Programm lose.)
-
 
   )
 
