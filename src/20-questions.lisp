@@ -1,14 +1,15 @@
 ;;; ゲーム20の質問を実装する
 (defparameter *answer* nil "answer")
 (defparameter *item-table* (make-hash-table) "hash table for item and infomation")
+(defparameter *items* nil)
 (defparameter *categories* nil)
 
-(defparameter *items*
+(defvar *simple-items*
   `((elephant . ((animal-p . yes)
 		 (color . gray)
 		 (bigger-than-you . yes)
-		 (fly-p . yes)
-		 (eat-meat-p . yes)))
+		 (fly-p . no)
+		 (eat-meat-p . no)))
     (apple . ((animal-p . no)
 	      (color . red)
 	      (bigger-than-you . no)
@@ -16,7 +17,7 @@
 	      (eat-meat-p . no))))
   "Items and their infomation. These are data for *item-table*.")
 
-(defparameter *simple-categories*
+(defvar *simple-categories*
   '((animal-p . (yes no))
     (color . (red gray yellow))
     (bigger-than-you . (yes no))
@@ -27,7 +28,10 @@
 (defun init-item-table ()
   "Init table for 20 questions."
   ;; Init Category
-  (setf *categories* *simple-categories*)  
+  (setf *categories* (copy-alist *simple-categories*))
+  ;; Init Item
+  (setf *items* (copy-alist *simple-items*))
+  
   ;; Init table.
   (setf *item-table* (make-hash-table))
   ;; Check item-and-info-list from *items* and insert into *item-table*.
@@ -100,8 +104,14 @@
   (delete value (assoc category-name *categories*)))
 
 
-(defun question ()
+(defun question (&optional (answer nil))
   "Question for user and return multiple values within category-name and value."
+
+  ;; If input answer, question about answer.
+  (when answer
+    (format t "Answer is ~a ?~%" answer)
+    (return-from question))
+  
   ;; categoryの先頭から確認する
   (let* ((candidate-category (one-of-candidate-category))
 	 (category-name (category-name candidate-category))
@@ -111,15 +121,10 @@
     (format t "~a is ~a ?~%" category-name category-value)
     (values category-name category-value)))
 
-;; (defun test-multiple-values ()
-;;   (multiple-value-bind (category-name value) (question)
-;;     (format t "Multiple Value: ~a ~a ~%" category-name value)))
-
 (defun one-of-candidate-category ()
   "Return one of category for answer."
   ;; カテゴリーに紐づく属性の数が存在していれば回答候補のカテゴリー
   (find-if #'(lambda (x) (category-values x)) *categories*))
-
 
 ;; helper for game.
 (defun init-game-settings ()
@@ -154,6 +159,10 @@
   "Check the item is answer or not."
   (if (= (count-item-info item) 0) t nil))
 
+(defun search-answer ()
+  "Search answer in *item-table*, and return answer if exsists."
+  (maphash (lambda (item _) (when (answer-p item) (return-from search-answer item))) *item-table*))
+
 (defun true-answer-p (answer)
   "Check the answer is correct or not."
   (if (eq answer *answer*) t nil))
@@ -172,28 +181,32 @@
   ;; 20 questions
   (dotimes (i 20)
 
-    ;; TODO: 解答が確定しているなら返す
-    ;; Question about answer.
-    
-    ;; Question about category.
-    (multiple-value-bind (category-name value) (question)
-      
-      ;; Player answer for the question.
-      (when (eq (read-yes-or-not-from-player) 'yes)
+    (let ((answer (search-answer)))
+      (cond
+	;; 回答が確定していない場合
+	((null answer)
+	 ;; Question about category.
+	 (multiple-value-bind (category-name value) (question)
+	   ;; Player answer for the question.
+	   (when (eq (read-yes-or-not-from-player) 'yes)
+	     ;; *item-table*から該当の要素を全て消したい (e.q. 'animal-p 'yes の要素を持つinfoを全て消す
+	     (maphash (lambda (item _)
+			(when (eq (item-info-value item category-name) value)
+			  (format t "DELETE ~a ~a ~a%" item category-name value)
+			  ;; *item-tableから該当の要素を消す*
+			  (delete-item-info item category-name)))
+		      *item-table*))
+	   ;; 今回の質問をできないようにカテゴリーを更新する
+	   (delete-category-value category-name value)))
 	
-	;; *item-table*から該当の要素を全て消したい (e.q. 'animal-p 'yes の要素を持つinfoを全て消す
-	(maphash (lambda (item _)
-		   (when (eq (item-info-value item category-name) value)
-		     (format t "DELETE ~a ~a ~a%" item category-name value)
-		     ;; *item-tableから該当の要素を消す*
-		     (delete-item-info item category-name)))
-		 *item-table*))
-      
-      ;; 今回の質問をできないようにカテゴリーを更新する
-      (delete-category-value category-name value)
-
-      ;; debuggin
-      (show-item-table)))
-
+	;; 回答が確定している場合
+	(t
+	 (question answer)
+	 (when (eq (read-yes-or-not-from-player) 'yes)
+	   (format t "Programm is Win!!~%")
+	   (return-from main)))))
+    ;; debuggin
+    (show-item-table))
+  
   ;; Show the answer.
   (format t "Player is WIN!!~% Answer is ~a~%" *answer*))
