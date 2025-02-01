@@ -108,18 +108,16 @@
   "Question for user and return multiple values within category-name and value."
 
   ;; If input answer, question about answer.
-  (when answer
-    (format t "Answer is ~a ?~%" answer)
-    (return-from question))
-  
-  ;; categoryの先頭から確認する
-  (let* ((candidate-category (one-of-candidate-category))
-	 (category-name (category-name candidate-category))
-	 ;; 回答用のvalueを一つ選択
-	 (category-value (car (category-values candidate-category))))
+  (if answer
+      (format t "Answer is ~a ?~%" answer)
+      ;; categoryの先頭から確認する
+      (let* ((candidate-category (one-of-candidate-category))
+	     (category-name (category-name candidate-category))
+	     ;; 回答用のvalueを一つ選択
+	     (category-value (car (category-values candidate-category))))
 
-    (format t "~a is ~a ?~%" category-name category-value)
-    (values category-name category-value)))
+	(format t "~a is ~a ?~%" category-name category-value)
+	(values category-name category-value))))
 
 (defun one-of-candidate-category ()
   "Return one of category for answer."
