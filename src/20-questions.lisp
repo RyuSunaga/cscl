@@ -101,12 +101,17 @@
 
 (defun delete-category-value (category-name value)
   "Delete value from category-name."
-  (delete value (assoc category-name *categories*)))
+
+  ;; 全ての処理系で破壊的にリストを変更する保証がないためこの実装は避ける
+  ;; (delete value (assoc category-name *categories*))
+
+  (let ((category (assoc category-name *categories*)))
+    (when category
+      (setf (cdr category) (delete value (cdr category))))))
 
 
 (defun question (&optional (answer nil))
   "Question for user and return multiple values within category-name and value."
-
   ;; If input answer, question about answer.
   (if answer
       (format t "Answer is ~a ?~%" answer)
@@ -179,30 +184,29 @@
   ;; 20 questions
   (dotimes (i 20)
 
-    (let ((answer (search-answer)))
-      (cond
-	;; 回答が確定していない場合
-	((null answer)
-	 ;; Question about category.
-	 (multiple-value-bind (category-name value) (question)
-	   ;; Player answer for the question.
-	   (when (eq (read-yes-or-not-from-player) 'yes)
-	     ;; *item-table*から該当の要素を全て消したい (e.q. 'animal-p 'yes の要素を持つinfoを全て消す
-	     (maphash (lambda (item _)
-			(when (eq (item-info-value item category-name) value)
-			  (format t "DELETE ~a ~a ~a%" item category-name value)
-			  ;; *item-tableから該当の要素を消す*
-			  (delete-item-info item category-name)))
-		      *item-table*))
-	   ;; 今回の質問をできないようにカテゴリーを更新する
-	   (delete-category-value category-name value)))
-	
+    (if (search-answer)
 	;; 回答が確定している場合
-	(t
-	 (question answer)
-	 (when (eq (read-yes-or-not-from-player) 'yes)
-	   (format t "Programm is Win!!~%")
-	   (return-from main)))))
+	(progn
+	  (question (search-answer))
+	  (when (eq (read-yes-or-not-from-player) 'yes)
+	    (format t "Programm is Win!!~%")
+	    (return-from main)))
+	;; 回答が確定していない場合
+	(progn
+	  ;; Question about category.
+	  (multiple-value-bind (category-name value) (question)
+	    ;; Player answer for the question.
+	    (when (eq (read-yes-or-not-from-player) 'yes)
+	      ;; *item-table*から該当の要素を全て消したい (e.q. 'animal-p 'yes の要素を持つinfoを全て消す
+	      (maphash (lambda (item _)
+			 (when (eq (item-info-value item category-name) value)
+			   (format t "DELETE ~a ~a ~a%" item category-name value)
+			   ;; *item-tableから該当の要素を消す*
+			   (delete-item-info item category-name)))
+		       *item-table*))
+	    ;; 今回の質問をできないようにカテゴリーを更新する
+	    (delete-category-value category-name value))))
+    
     ;; debuggin
     (show-item-table))
   
